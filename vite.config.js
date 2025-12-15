@@ -1,7 +1,7 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
-// If your app will be served from https://<user>.github.io/Orbit/
-// set base to '/Orbit/'. Update if your repo name differs.
 export default defineConfig({
-  base: 'dxinschool.github.io/Orbit/'
+  plugins: [react()],
+  base: 'https://dxinschool.github.io/Orbit/'
 });
