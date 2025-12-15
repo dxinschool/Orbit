@@ -5,6 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Orbit App</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      // Ensure any previously-registered service worker or caches are removed
+      // so users don't get stale assets (helps when redeploying to GitHub Pages).
+      if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+        try {
+          navigator.serviceWorker.getRegistrations().then(regs => {
+            regs.forEach(r => r.unregister().catch(() => {}));
+          }).catch(() => {});
+        } catch (e) {}
+      }
+      if (typeof caches !== 'undefined' && caches.keys) {
+        try { caches.keys().then(keys => keys.forEach(k => caches.delete(k))); } catch (e) {}
+      }
+    </script>
     <script type="module" crossorigin src="/Orbit/assets/index-BX74OoCg.js"></script>
   </head>
   <body class="antialiased">
