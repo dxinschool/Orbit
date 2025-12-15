@@ -29,3 +29,7 @@ Notes
 ```
 
 - Tailwind classes are used; the development build includes the Tailwind CDN for quick styling.
+
+GitHub Pages
+
+- The app is published to GitHub Pages at: https://dxinschool.github.io/Orbit/
