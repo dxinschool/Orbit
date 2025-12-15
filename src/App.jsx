@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   BookOpen, 
   Wallet, 
@@ -259,6 +259,92 @@ export default function OrbitApp() {
     });
   };
 
+  // Export / Import helpers
+  const fileInputRef = useRef(null);
+
+  const handleExport = () => {
+    try {
+      const raw = localStorage.getItem(LOCAL_KEY);
+      const payload = {
+        appId,
+        exportedAt: Date.now(),
+        data: raw ? JSON.parse(raw) : { entries, transactions }
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `orbit-export-${appId}-${new Date().toISOString()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('Export failed:', e);
+      alert('Export failed. See console for details.');
+    }
+  };
+
+  const triggerImport = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImportFile = (ev) => {
+    const f = ev.target.files && ev.target.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const parsed = JSON.parse(e.target.result);
+        if (parsed.appId && parsed.appId !== appId) {
+          if (!confirm('Imported file appears to belong to a different app. Continue?')) return;
+        }
+
+        const incoming = parsed.data || parsed;
+        const incomingEntries = incoming.entries || [];
+        const incomingTransactions = incoming.transactions || [];
+
+        const replace = confirm('Import: Click OK to REPLACE existing local data. Click Cancel to MERGE.');
+
+        let finalEntries = [];
+        let finalTransactions = [];
+
+        if (replace) {
+          finalEntries = incomingEntries;
+          finalTransactions = incomingTransactions;
+        } else {
+          // Merge by id, prefer incoming entries first then existing to keep local continuity
+          const byId = {};
+          [...incomingEntries, ...entries].forEach(it => { if (it && it.id) byId[it.id] = it; });
+          finalEntries = Object.values(byId);
+
+          const byTx = {};
+          [...incomingTransactions, ...transactions].forEach(it => { if (it && it.id) byTx[it.id] = it; });
+          finalTransactions = Object.values(byTx);
+        }
+
+        try {
+          localStorage.setItem(LOCAL_KEY, JSON.stringify({ entries: finalEntries, transactions: finalTransactions }));
+        } catch (e) {
+          console.error('Failed to write imported data to localStorage:', e);
+          alert('Failed to save imported data to localStorage. See console for details.');
+          return;
+        }
+
+        setEntries(finalEntries);
+        setTransactions(finalTransactions);
+        alert('Import complete.');
+      } catch (err) {
+        console.error('Import failed:', err);
+        alert('Failed to parse import file. Make sure it is a valid Orbit export JSON.');
+      } finally {
+        // clear input so same file can be re-picked
+        ev.target.value = '';
+      }
+    };
+    reader.readAsText(f);
+  };
+
   const currentMoodObj = MOODS.find(m => m.id === recentMood) || MOODS[2];
 
   // --- Render Functions ---
@@ -273,8 +359,14 @@ export default function OrbitApp() {
             </h1>
             <p className="text-slate-400 text-sm mt-1">Your orbit looks stable today.</p>
           </div>
-          <div className={`p-3 rounded-full ${currentMoodObj.bg} ${currentMoodObj.color} animate-pulse`}>
-            <currentMoodObj.icon size={24} />
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:flex gap-2">
+              <Button variant="ghost" onClick={triggerImport} className="text-sm">Import</Button>
+              <Button variant="secondary" onClick={handleExport} className="text-sm">Export</Button>
+            </div>
+            <div className={`p-3 rounded-full ${currentMoodObj.bg} ${currentMoodObj.color} animate-pulse`}>
+              <currentMoodObj.icon size={24} />
+            </div>
           </div>
         </header>
       </FadeIn>
@@ -536,6 +628,8 @@ export default function OrbitApp() {
       </nav>
 
       {/* Modals */}
+      {/* Hidden import file input */}
+      <input type="file" accept="application/json" ref={fileInputRef} style={{ display: 'none' }} onChange={handleImportFile} />
       {showModal === 'journal' && (
         <EntryModal 
             onClose={() => setShowModal(null)} 
