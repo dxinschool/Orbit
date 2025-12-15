@@ -11,6 +11,6 @@ yarn-error.log*
 coverage/
 .idea/
 android/
-ios/
+.ios/ # keep accidental mac/ios entries but allow committed native iOS folder
 .history
 local-*/
