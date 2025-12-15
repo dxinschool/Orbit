@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "prepare:ios": "npm run build && (npx cap add ios || true) && npx cap copy ios",
+    "ci:build": "npm ci && npm run prepare:ios"
   },
   "dependencies": {
     "@capacitor/android": "^8.0.0",
